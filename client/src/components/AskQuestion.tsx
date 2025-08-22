@@ -4,32 +4,42 @@ import {
   Container,
   Typography,
   Card,
-  CardContent,
-  CardActions,
   Button,
   Box,
   TextField,
-  Paper,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  SelectChangeEvent,
 } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
-import QuestionAnswerIcon from '@mui/icons-material/QuestionAnswer';
+import { categories } from '../utils/categories';
+
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
 
 const AskQuestion: React.FC = () => {
   const [question, setQuestion] = useState('');
+  const [category, setCategory] = useState('');
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const response = await fetch('http://localhost:5000/api/questions', {
+      console.log('Submitting question with category:', category); // Debug log
+      const response = await fetch(`${API_BASE_URL}/api/questions`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ text: question }),
+        body: JSON.stringify({ 
+          text: question.trim(), 
+          category: category.trim() 
+        }),
       });
-
       if (response.ok) {
+        const data = await response.json();
+        console.log('Question submitted successfully:', data); // Debug log
         navigate('/board');
       }
     } catch (error) {
@@ -37,61 +47,81 @@ const AskQuestion: React.FC = () => {
     }
   };
 
+  const handleCategoryChange = (event: SelectChangeEvent) => {
+    const newCategory = event.target.value;
+    console.log('Selected category:', newCategory); // Debug log
+    setCategory(newCategory);
+  };
+
   return (
     <Container maxWidth="md">
       <Box sx={{ my: 4 }}>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
-          <Typography variant="h4" component="h1" sx={{ flexGrow: 1 }}>
-            Ask a Question
-          </Typography>
-          <Button
-            variant="outlined"
-            size="small"
-            startIcon={<ArrowBackIcon />}
-            onClick={() => navigate('/board')}
-            sx={{ ml: 2 }}
-          >
-            Back to Board
-          </Button>
-        </Box>
-
         <Card>
-          <CardContent>
-            <Box sx={{ textAlign: 'center', mb: 3 }}>
-              <QuestionAnswerIcon sx={{ fontSize: 60, color: 'primary.main' }} />
-            </Box>
-            
-            <form onSubmit={handleSubmit}>
-              <TextField
-                fullWidth
-                multiline
-                rows={8}
+          <Box sx={{ p: 3 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
+              <Button
                 variant="outlined"
+                startIcon={<ArrowBackIcon />}
+                onClick={() => navigate('/board')}
+                size="small"
+                sx={{ mr: 2 }}
+              >
+                Back to Board
+              </Button>
+              <Typography variant="h5" component="h1" sx={{ flexGrow: 1 }}>
+                Ask a Question
+              </Typography>
+            </Box>
+
+            <form onSubmit={handleSubmit}>
+              <FormControl fullWidth sx={{ mb: 3 }}>
+                <InputLabel>Category</InputLabel>
+                <Select
+                  value={category}
+                  label="Category"
+                  onChange={handleCategoryChange}
+                  required
+                >
+                  {categories.map((cat) => (
+                    <MenuItem key={cat} value={cat}>
+                      {cat}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+
+              <TextField
+                label="Your Question"
+                multiline
+                rows={6}
                 value={question}
                 onChange={(e) => setQuestion(e.target.value)}
-                placeholder="Type your question here..."
+                fullWidth
                 required
-                sx={{ mb: 3 }}
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    fontSize: { xs: '1rem', sm: '1.1rem', md: '1.2rem' },
+                    '& textarea': {
+                      minHeight: { xs: '70px', sm: '120px', md: '80px' }
+                    }
+                  },
+                  '& .MuiInputLabel-root': {
+                    fontSize: { xs: '1rem', sm: '1.1rem', md: '1.2rem' }
+                  }
+                }}
               />
-              
-              <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2 }}>
-                <Button
-                  variant="outlined"
-                  onClick={() => navigate('/board')}
-                >
-                  Cancel
-                </Button>
-                <Button
-                  type="submit"
-                  variant="contained"
-                  color="primary"
-                  startIcon={<QuestionAnswerIcon />}
-                >
-                  Submit Question
-                </Button>
-              </Box>
+
+              <Button
+                type="submit"
+                variant="contained"
+                color="primary"
+                fullWidth
+                disabled={!question.trim() || !category}
+              >
+                Submit Question
+              </Button>
             </form>
-          </CardContent>
+          </Box>
         </Card>
       </Box>
     </Container>

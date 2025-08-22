@@ -8,7 +8,7 @@ import {
   Typography,
   Alert,
 } from '@mui/material';
-import AdminPanelIcon from '@mui/icons-material/AdminPanelSettings';
+import AdminPanelIcon from '@mui/icons-material/AdminPanelSettings'; 
 
 const Login: React.FC = () => {
   const [username, setUsername] = useState('');
@@ -18,7 +18,7 @@ const Login: React.FC = () => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (username === 'admin' && password === 'faithheals1853') {
+    if (username === 'admin' && password === 'faithheals1853' ) {
       // Store authentication state (you might want to use a proper auth context/state management)
       localStorage.setItem('isAdmin', 'true');
       navigate('/admin');
@@ -90,6 +90,7 @@ const Login: React.FC = () => {
       </Box>
     </Container>
   );
+  
 };
 
 export default Login; 

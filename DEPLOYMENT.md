@@ -1,117 +1,185 @@
-# AWS Deployment Guide for DearFriend
-
-This guide will help you deploy the DearFriend application to AWS using Elastic Beanstalk for the backend and S3 + CloudFront for the frontend.
+# DearFriend App Deployment Guide for Liquid Web
 
 ## Prerequisites
 
-1. AWS Account
-2. AWS CLI installed and configured
-3. Node.js and npm installed
-4. Git installed
+- Node.js 16+ installed on your Liquid Web server
+- MongoDB database (can be local or cloud-based)
+- PM2 for process management (recommended)
 
-## Backend Deployment (Elastic Beanstalk)
+## Quick Deployment Steps
 
-1. Install the Elastic Beanstalk CLI:
+### 1. Upload Your Code
+Upload your project files to your Liquid Web server using FTP, SCP, or Git.
+
+### 2. Install Dependencies
 ```bash
-pip install awsebcli
+# Navigate to your project directory
+cd /path/to/your/dearfriend-app
+
+# Install all dependencies
+npm run install-all
 ```
 
-2. Navigate to the server directory:
+### 3. Set Environment Variables
+Create a `.env` file in the root directory:
 ```bash
-cd server
+cp env.example .env
 ```
 
-3. Initialize Elastic Beanstalk:
-```bash
-eb init -p node.js dearfriend-backend
+Edit the `.env` file with your production values:
+```env
+MONGODB_URI=mongodb://your-mongodb-connection-string
+PORT=5000
+NODE_ENV=production
+JWT_SECRET=your-secure-secret-key
+CORS_ORIGIN=https://yourdomain.com
 ```
 
-4. Create an environment and deploy:
+### 4. Build the Application
 ```bash
-eb create dearfriend-env
-```
+# Run the build script
+chmod +x build.sh
+./build.sh
 
-5. Configure environment variables in the AWS Console:
-   - MONGODB_URI: Your MongoDB connection string
-   - PORT: 5000
-
-## Frontend Deployment (S3 + CloudFront)
-
-1. Build the React application:
-```bash
-cd client
-npm install
+# Or manually:
 npm run build
 ```
 
-2. Create an S3 bucket:
-   - Go to AWS S3 Console
-   - Create a new bucket with a unique name
-   - Enable static website hosting
-   - Set bucket policy for public access
+### 5. Start the Application
 
-3. Upload the build files:
+#### Option A: Using PM2 (Recommended)
 ```bash
-aws s3 sync build/ s3://your-bucket-name
+# Install PM2 globally if not already installed
+npm install -g pm2
+
+# Start the application with PM2
+pm2 start ecosystem.config.js --env production
+
+# Save PM2 configuration
+pm2 save
+
+# Set PM2 to start on boot
+pm2 startup
 ```
 
-4. Create a CloudFront distribution:
-   - Go to AWS CloudFront Console
-   - Create a new distribution
-   - Set the S3 bucket as the origin
-   - Configure caching and security settings
+#### Option B: Using Node directly
+```bash
+npm start
+```
 
-## Domain Setup
+#### Option C: Using the build script
+```bash
+npm run deploy
+```
 
-1. Register a domain in Route 53 or use an existing one
-2. Create a hosted zone for your domain
-3. Add A records pointing to your CloudFront distribution
-4. Configure SSL certificate in CloudFront
+## Configuration Options
 
-## Environment Configuration
+### Port Configuration
+The application runs on port 5000 by default. You can change this by:
+1. Setting the `PORT` environment variable
+2. Updating the `ecosystem.config.js` file
+3. Configuring your web server (Apache/Nginx) to proxy to this port
 
-1. Update the frontend API endpoint:
-   - Edit `client/src/components/QuestionBoard.tsx`
-   - Change `http://localhost:5000` to your Elastic Beanstalk URL
+### Database Setup
+- **Local MongoDB**: Install MongoDB on your server
+- **Cloud MongoDB**: Use MongoDB Atlas or similar service
+- Update the `MONGODB_URI` in your `.env` file
 
-2. Update CORS settings in the backend:
-   - Edit `server/index.js`
-   - Update the CORS origin to include your frontend domain
+### Web Server Configuration (Apache/Nginx)
 
-## Monitoring and Maintenance
+#### Apache Configuration
+Create a virtual host configuration:
+```apache
+<VirtualHost *:80>
+    ServerName yourdomain.com
+    ServerAlias www.yourdomain.com
+    
+    ProxyPreserveHost On
+    ProxyPass / http://localhost:5000/
+    ProxyPassReverse / http://localhost:5000/
+    
+    ErrorLog ${APACHE_LOG_DIR}/dearfriend_error.log
+    CustomLog ${APACHE_LOG_DIR}/dearfriend_access.log combined
+</VirtualHost>
+```
 
-1. Set up CloudWatch alarms for monitoring
-2. Configure auto-scaling for the backend
-3. Set up backup strategies for the database
-4. Implement logging and error tracking
+#### Nginx Configuration
+```nginx
+server {
+    listen 80;
+    server_name yourdomain.com www.yourdomain.com;
+    
+    location / {
+        proxy_pass http://localhost:5000;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_cache_bypass $http_upgrade;
+    }
+}
+```
+
+## Maintenance
+
+### Updating the Application
+```bash
+# Pull latest changes
+git pull origin main
+
+# Install dependencies
+npm run install-all
+
+# Build the application
+npm run build
+
+# Restart with PM2
+pm2 restart dearfriend-app
+```
+
+### Monitoring
+```bash
+# View PM2 status
+pm2 status
+
+# View logs
+pm2 logs dearfriend-app
+
+# Monitor resources
+pm2 monit
+```
+
+### Troubleshooting
+
+#### Common Issues:
+1. **Port already in use**: Change the PORT in .env file
+2. **MongoDB connection failed**: Check your MONGODB_URI
+3. **Build fails**: Ensure Node.js version is 16+
+4. **Static files not loading**: Check if NODE_ENV is set to 'production'
+
+#### Logs Location:
+- PM2 logs: `~/.pm2/logs/`
+- Application logs: `./logs/` (if using ecosystem.config.js)
 
 ## Security Considerations
 
-1. Enable HTTPS for all endpoints
-2. Implement proper CORS policies
-3. Set up proper IAM roles and permissions
-4. Configure security groups for the backend
-5. Enable AWS WAF for additional protection
+1. **Environment Variables**: Never commit `.env` files to version control
+2. **HTTPS**: Configure SSL certificates for production
+3. **Firewall**: Ensure only necessary ports are open
+4. **Database**: Use strong passwords and restrict access
+5. **Updates**: Keep Node.js and dependencies updated
 
-## Cost Optimization
+## Performance Optimization
 
-1. Use AWS Free Tier where possible
-2. Implement auto-scaling to optimize resource usage
-3. Use CloudFront caching to reduce backend load
-4. Monitor and optimize database queries
-5. Consider using AWS Lambda for certain operations
+1. **PM2 Clustering**: Use multiple instances for better performance
+2. **Caching**: Implement Redis for session storage
+3. **CDN**: Use a CDN for static assets
+4. **Compression**: Enable gzip compression in your web server
 
-## Troubleshooting
+## Support
 
-1. Check CloudWatch logs for errors
-2. Verify security group settings
-3. Check CORS configuration
-4. Verify environment variables
-5. Monitor database connections
-
-## Additional Resources
-
-- [AWS Elastic Beanstalk Documentation](https://docs.aws.amazon.com/elasticbeanstalk/latest/dg/Welcome.html)
-- [AWS S3 Documentation](https://docs.aws.amazon.com/AmazonS3/latest/userguide/Welcome.html)
-- [AWS CloudFront Documentation](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/Introduction.html)
-- [AWS Route 53 Documentation](https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/Welcome.html) 
+For issues specific to Liquid Web hosting, contact Liquid Web support.
+For application-specific issues, check the logs and ensure all environment variables are properly set. 

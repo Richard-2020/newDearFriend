@@ -14,6 +14,8 @@ import {
 import DeleteIcon from '@mui/icons-material/Delete';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+
 interface Question {
   _id: string;
   text: string;
@@ -34,7 +36,7 @@ const AdminPanel: React.FC = () => {
 
   const fetchQuestions = async () => {
     try {
-      const response = await fetch('http://localhost:5000/api/questions');
+      const response = await fetch(`${API_BASE_URL}/api/questions`);
       const data = await response.json();
       setQuestions(data);
     } catch (error) {
@@ -48,7 +50,7 @@ const AdminPanel: React.FC = () => {
 
     try {
       const response = await fetch(
-        `http://localhost:5000/api/questions/${selectedQuestion._id}/answer`,
+        `${API_BASE_URL}/api/questions/${selectedQuestion._id}/answer`,
         {
           method: 'PUT',
           headers: {
@@ -72,7 +74,7 @@ const AdminPanel: React.FC = () => {
     if (window.confirm('Are you sure you want to delete this question?')) {
       try {
         const response = await fetch(
-          `http://localhost:5000/api/questions/${questionId}`,
+          `${API_BASE_URL}/api/questions/${questionId}`,
           {
             method: 'DELETE',
           }

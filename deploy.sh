@@ -11,13 +11,6 @@ sudo apt-get install -y nodejs
 # Install PM2 globally
 sudo npm install -g pm2
 
-# Install MongoDB
-sudo apt-get install -y mongodb
-
-# Clone your repository (replace with your actual repository URL)
-# git clone <your-repository-url>
-# cd <your-repository-name>
-
 # Install dependencies
 cd server
 npm install
@@ -30,7 +23,7 @@ npm run build
 # Create environment file for the server
 cd ../server
 cat > .env << EOF
-MONGODB_URI=mongodb://dearfriend_user:your_secure_password@localhost:27017/dearfriend
+MONGODB_URI=mongodb+srv://<username>:<password>@<cluster>.mongodb.net/<database>?retryWrites=true&w=majority
 PORT=5000
 EOF
 
