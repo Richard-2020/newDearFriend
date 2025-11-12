@@ -1,15 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import {
   Container,
   Typography,
   Card,
   CardContent,
-  CardActions,
   Button,
   Box,
-  Tabs,
-  Tab,
   Chip,
   FormControl,
   InputLabel,
@@ -18,9 +15,13 @@ import {
   SelectChangeEvent,
   useTheme,
   useMediaQuery,
+  Fade,
+  Divider,
 } from '@mui/material';
 import HomeIcon from '@mui/icons-material/Home';
 import QuestionAnswerIcon from '@mui/icons-material/QuestionAnswer';
+import AddIcon from '@mui/icons-material/Add';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import { categories } from '../utils/categories';
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
@@ -42,17 +43,22 @@ const QuestionBoard: React.FC = () => {
   const navigate = useNavigate();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
-  const isDesktop = useMediaQuery(theme.breakpoints.up('lg'));
+  const [fadeIn, setFadeIn] = useState(false);
 
   useEffect(() => {
     fetchQuestions();
+    setFadeIn(true);
   }, []);
 
   const fetchQuestions = async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/questions`);
+      
+      const response = await fetch(`${API_BASE_URL}/api/questions`, {
+        headers: {
+          'ngrok-skip-browser-warning': 'true', // Add this line
+        },
+      });
       const data = await response.json();
-      console.log('Fetched questions:', data); // Debug log
       setQuestions(data);
     } catch (error) {
       console.error('Error fetching questions:', error);
@@ -60,236 +66,308 @@ const QuestionBoard: React.FC = () => {
   };
 
   const handleCategoryChange = (event: SelectChangeEvent) => {
-    const newCategory = event.target.value;
-    console.log('Selected category:', newCategory); // Debug log
-    setSelectedCategory(newCategory);
+    setSelectedCategory(event.target.value);
   };
 
   const filteredQuestions = questions.filter(question => {
     if (selectedCategory === 'All') return true;
     if (selectedCategory === 'Unanswered') return !question.answered;
-    
-    // Debug logs for category matching
-    console.log('Question category:', question.category);
-    console.log('Selected category:', selectedCategory);
-    console.log('Match:', question.category === selectedCategory);
-    
     return question.category === selectedCategory;
   });
 
   const sortedQuestions = [...filteredQuestions].sort((a, b) => 
-    new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+    new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
   );
 
   return (
-    <Container 
-      maxWidth="xl" 
-      sx={{ 
-        py: { xs: 2, sm: 3, md: 4, lg: 5 },
-        px: { xs: 2, sm: 3, md: 4, lg: 6 }
+    <Box
+      sx={{
+        minHeight: '100vh',
+        background: 'linear-gradient(180deg, #FFFFFF 0%, #FAFAFA 100%)',
+        py: { xs: 4, sm: 6, md: 8 },
       }}
     >
-      <Box sx={{ 
-        display: 'flex', 
-        flexDirection: 'column',
-        gap: { xs: 2, sm: 3, md: 4, lg: 5 }
-      }}>
-        {/* Header Section */}
-        <Box sx={{ 
-          display: 'flex', 
-          flexDirection: { xs: 'column', sm: 'row' },
-          justifyContent: 'space-between', 
-          alignItems: { xs: 'stretch', sm: 'center' },
-          gap: 2
-        }}>
-          <Typography 
-            variant={isMobile ? "h5" : isDesktop ? "h3" : "h4"} 
-            component="h1"
-            sx={{ 
-              textAlign: { xs: 'center', sm: 'left' },
-              fontWeight: 600
-            }}
-          >
-            Questions
-          </Typography>
-          <Box sx={{ 
-            display: 'flex', 
-            gap: 2,
-            justifyContent: { xs: 'center', sm: 'flex-end' }
-          }}>
-            <Button
-              variant="outlined"
-              startIcon={<HomeIcon />}
-              onClick={() => navigate('/')}
-              size={isMobile ? "small" : "large"}
-            >
-              Back to Home
-            </Button>
-            <Button
-              variant="contained"
-              startIcon={<QuestionAnswerIcon />}
-              onClick={() => navigate('/ask')}
-              size={isMobile ? "small" : "large"}
-            >
-              Ask a Question
-            </Button>
-          </Box>
-        </Box>
-
-        {/* Category Filter */}
-        <Box sx={{ 
-          maxWidth: { xs: '100%', sm: '50%', md: '40%', lg: '30%' },
-          mx: { xs: 'auto', sm: 0 }
-        }}>
-          <FormControl fullWidth>
-            <InputLabel>Category</InputLabel>
-            <Select
-              value={selectedCategory}
-              label="Category"
-              onChange={handleCategoryChange}
-              size={isMobile ? "small" : "medium"}
-            >
-              {allCategories.map((category) => (
-                <MenuItem key={category} value={category}>
-                  {category}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-        </Box>
-
-        {/* Questions Grid */}
-        <Box sx={{ 
-          display: 'grid', 
-          gridTemplateColumns: {
-            xs: '1fr',
-            sm: 'repeat(2, 1fr)',
-            md: 'repeat(2, 1fr)',
-            lg: 'repeat(2, 1fr)'
-          },
-          gap: { xs: 2, sm: 3, md: 4, lg: 5 }
-        }}>
-          {sortedQuestions.map((question) => (
-            <Card 
-              key={question._id}
-              sx={{ 
-                height: '100%',
+      <Container maxWidth="xl">
+        <Fade in={fadeIn} timeout={600}>
+          <Box sx={{ mb: { xs: 4, sm: 6, md: 8 } }}>
+            {/* Header Section */}
+            <Box
+              sx={{
                 display: 'flex',
-                flexDirection: 'column',
-                transition: 'transform 0.2s, box-shadow 0.2s',
-                '&:hover': {
-                  transform: 'translateY(-4px)',
-                  boxShadow: theme.shadows[4]
-                }
+                flexDirection: { xs: 'column', sm: 'row' },
+                justifyContent: 'space-between',
+                alignItems: { xs: 'stretch', sm: 'center' },
+                gap: 3,
+                mb: { xs: 4, sm: 6 },
               }}
             >
-              <CardContent sx={{ 
-                flexGrow: 1, 
-                display: 'flex', 
-                flexDirection: 'column', 
-                gap: 3,
-                p: { xs: 2, sm: 3, md: 4 }
-              }}>
-                <Box sx={{ 
-                  display: 'flex', 
-                  justifyContent: 'space-between', 
-                  alignItems: 'flex-start', 
-                  gap: 2
-                }}>
-                  <Typography 
-                    variant="body1" 
-                    sx={{ 
-                      flexGrow: 1,
-                      fontSize: { 
-                        xs: '0.9rem', 
-                        sm: '1rem', 
-                        md: '1.1rem',
-                        lg: '1.2rem'
-                      },
-                      lineHeight: 1.5
-                    }}
-                  >
-                    {question.text}
-                  </Typography>
-                  <Chip 
-                    label={question.category} 
-                    color={question.answered ? "success" : "default"}
-                    size={isMobile ? "small" : "medium"}
-                    sx={{ 
-                      minWidth: { xs: '80px', sm: '100px', md: '120px' },
-                      fontSize: { 
-                        xs: '0.7rem', 
-                        sm: '0.8rem',
-                        md: '0.9rem'
-                      }
-                    }}
-                  />
-                </Box>
-                <Typography 
-                  variant="caption" 
-                  color="text.secondary"
-                  sx={{ 
-                    fontSize: { 
-                      xs: '0.7rem', 
-                      sm: '0.8rem',
-                      md: '0.9rem'
-                    }
+              <Box>
+                <Typography
+                  variant="h2"
+                  component="h1"
+                  sx={{
+                    mb: 1,
+                    fontWeight: 700,
+                    background: 'linear-gradient(135deg, #0066CC 0%, #004C99 100%)',
+                    backgroundClip: 'text',
+                    WebkitBackgroundClip: 'text',
+                    WebkitTextFillColor: 'transparent',
                   }}
                 >
-                  {new Date(question.createdAt).toLocaleDateString()}
+                  Questions
                 </Typography>
-                {question.answered && (
-                  <Box sx={{ 
-                    mt: 'auto',
-                    p: { xs: 2, sm: 3, md: 4 }, 
-                    bgcolor: 'grey.100', 
-                    borderRadius: 1,
-                    fontSize: { 
-                      xs: '0.85rem', 
-                      sm: '0.9rem',
-                      md: '1rem',
-                      lg: '1.1rem'
-                    }
-                  }}>
-                    <Typography 
-                      variant="subtitle2" 
-                      color="primary"
-                      sx={{ 
-                        mb: 2,
-                        fontSize: { 
-                          xs: '0.9rem', 
-                          sm: '1rem',
-                          md: '1.1rem',
-                          lg: '1.2rem'
-                        },
-                        fontWeight: 600
-                      }}
-                    >
-                      Answer:
-                    </Typography>
-                    <Typography 
-                      variant="body2"
+                <Typography variant="body1" color="text.secondary">
+                  Explore questions from our community
+                </Typography>
+              </Box>
+              <Box
+                sx={{
+                  display: 'flex',
+                  gap: 2,
+                  flexWrap: 'wrap',
+                }}
+              >
+                <Button
+                  variant="outlined"
+                  startIcon={<HomeIcon />}
+                  onClick={() => navigate('/')}
+                  sx={{
+                    borderRadius: 3,
+                    borderWidth: 2,
+                    '&:hover': {
+                      borderWidth: 2,
+                    },
+                  }}
+                >
+                  Home
+                </Button>
+                <Button
+                  variant="contained"
+                  startIcon={<AddIcon />}
+                  onClick={() => navigate('/ask')}
+                  sx={{
+                    borderRadius: 3,
+                  }}
+                >
+                  Ask Question
+                </Button>
+              </Box>
+            </Box>
+
+            {/* Category Filter */}
+            <Box
+              sx={{
+                maxWidth: { xs: '100%', sm: '400px' },
+                mb: { xs: 4, sm: 6 },
+              }}
+            >
+              <FormControl fullWidth>
+                <InputLabel>Filter by Category</InputLabel>
+                <Select
+                  value={selectedCategory}
+                  label="Filter by Category"
+                  onChange={handleCategoryChange}
+                  sx={{
+                    borderRadius: 3,
+                  }}
+                >
+                  {allCategories.map((category) => (
+                    <MenuItem key={category} value={category}>
+                      {category}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Box>
+          </Box>
+        </Fade>
+
+        {/* Questions Grid */}
+        {sortedQuestions.length === 0 ? (
+          <Fade in={fadeIn} timeout={800}>
+            <Box
+              sx={{
+                textAlign: 'center',
+                py: { xs: 8, sm: 12 },
+                px: 3,
+              }}
+            >
+              <QuestionAnswerIcon
+                sx={{
+                  fontSize: { xs: 64, sm: 96 },
+                  color: 'grey.300',
+                  mb: 3,
+                }}
+              />
+              <Typography variant="h5" color="text.secondary" gutterBottom>
+                No questions found
+              </Typography>
+              <Typography variant="body1" color="text.secondary" sx={{ mb: 4 }}>
+                {selectedCategory === 'All'
+                  ? 'Be the first to ask a question!'
+                  : `No questions in the "${selectedCategory}" category yet.`}
+              </Typography>
+              <Button
+                variant="contained"
+                startIcon={<AddIcon />}
+                onClick={() => navigate('/ask')}
+                sx={{
+                  borderRadius: 3,
+                }}
+              >
+                Ask a Question
+              </Button>
+            </Box>
+          </Fade>
+        ) : (
+          <Box
+            sx={{
+              display: 'grid',
+              gridTemplateColumns: {
+                xs: '1fr',
+                sm: 'repeat(2, 1fr)',
+                lg: 'repeat(2, 1fr)',
+              },
+              gap: { xs: 3, sm: 4, md: 5 },
+            }}
+          >
+            {sortedQuestions.map((question, index) => (
+              <Fade
+                key={question._id}
+                in={fadeIn}
+                timeout={600 + index * 100}
+                style={{ transitionDelay: `${index * 50}ms` }}
+              >
+                <Card
+                  sx={{
+                    height: '100%',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                    border: '1px solid rgba(0, 0, 0, 0.06)',
+                    '&:hover': {
+                      transform: 'translateY(-8px)',
+                      boxShadow: '0px 20px 40px rgba(0, 102, 204, 0.12)',
+                    },
+                  }}
+                >
+                  <CardContent
+                    sx={{
+                      flexGrow: 1,
+                      display: 'flex',
+                      flexDirection: 'column',
+                      p: { xs: 3, sm: 4 },
+                    }}
+                  >
+                    <Box
                       sx={{
-                        lineHeight: 1.6,
-                        fontSize: { 
-                          xs: '0.85rem', 
-                          sm: '0.9rem',
-                          md: '1rem',
-                          lg: '1.1rem'
-                        }
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'flex-start',
+                        gap: 2,
+                        mb: 2,
                       }}
                     >
-                      {question.answer}
+                      <Chip
+                        label={question.category}
+                        size="small"
+                        sx={{
+                          borderRadius: 2,
+                          fontWeight: 500,
+                          backgroundColor: question.answered
+                            ? 'rgba(0, 102, 204, 0.1)'
+                            : 'rgba(0, 0, 0, 0.06)',
+                          color: question.answered ? 'primary.main' : 'text.secondary',
+                        }}
+                      />
+                      {question.answered && (
+                        <Chip
+                          icon={<CheckCircleIcon sx={{ fontSize: 16 }} />}
+                          label="Answered"
+                          size="small"
+                          color="success"
+                          sx={{
+                            borderRadius: 2,
+                            fontWeight: 500,
+                          }}
+                        />
+                      )}
+                    </Box>
+
+                    <Typography
+                      variant="body1"
+                      sx={{
+                        mb: 3,
+                        fontSize: { xs: '1rem', sm: '1.125rem' },
+                        lineHeight: 1.7,
+                        color: 'text.primary',
+                        flexGrow: 1,
+                      }}
+                    >
+                      {question.text}
                     </Typography>
-                  </Box>
-                )}
-              </CardContent>
-            </Card>
-          ))}
-        </Box>
-      </Box>
-    </Container>
+
+                    <Typography
+                      variant="caption"
+                      color="text.secondary"
+                      sx={{
+                        mb: question.answered ? 3 : 0,
+                        fontSize: '0.875rem',
+                      }}
+                    >
+                      {new Date(question.createdAt).toLocaleDateString('en-US', {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric',
+                      })}
+                    </Typography>
+
+                    {question.answered && (
+                      <>
+                        <Divider sx={{ my: 3 }} />
+                        <Box
+                          sx={{
+                            p: 3,
+                            borderRadius: 3,
+                            background: 'linear-gradient(135deg, rgba(0, 102, 204, 0.05) 0%, rgba(0, 76, 153, 0.05) 100%)',
+                            border: '1px solid rgba(0, 102, 204, 0.1)',
+                          }}
+                        >
+                          <Typography
+                            variant="subtitle2"
+                            sx={{
+                              mb: 2,
+                              fontWeight: 600,
+                              color: 'primary.main',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: 1,
+                            }}
+                          >
+                            <CheckCircleIcon sx={{ fontSize: 20 }} />
+                            Answer
+                          </Typography>
+                          <Typography
+                            variant="body2"
+                            sx={{
+                              lineHeight: 1.7,
+                              color: 'text.primary',
+                            }}
+                          >
+                            {question.answer}
+                          </Typography>
+                        </Box>
+                      </>
+                    )}
+                  </CardContent>
+                </Card>
+              </Fade>
+            ))}
+          </Box>
+        )}
+      </Container>
+    </Box>
   );
 };
 
-export default QuestionBoard; 
+export default QuestionBoard;

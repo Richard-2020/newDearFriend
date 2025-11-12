@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Container,
@@ -12,8 +12,10 @@ import {
   Select,
   MenuItem,
   SelectChangeEvent,
+  Fade,
 } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import SendIcon from '@mui/icons-material/Send';
 import { categories } from '../utils/categories';
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
@@ -21,111 +23,194 @@ const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
 const AskQuestion: React.FC = () => {
   const [question, setQuestion] = useState('');
   const [category, setCategory] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const navigate = useNavigate();
+  const [fadeIn, setFadeIn] = useState(false);
+
+  useEffect(() => {
+    setFadeIn(true);
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!question.trim() || !category.trim()) return;
+
+    setIsSubmitting(true);
     try {
-      console.log('Submitting question with category:', category); // Debug log
       const response = await fetch(`${API_BASE_URL}/api/questions`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'ngrok-skip-browser-warning': 'true',
         },
-        body: JSON.stringify({ 
-          text: question.trim(), 
-          category: category.trim() 
+        body: JSON.stringify({
+          text: question.trim(),
+          category: category.trim(),
         }),
       });
       if (response.ok) {
-        const data = await response.json();
-        console.log('Question submitted successfully:', data); // Debug log
         navigate('/board');
       }
     } catch (error) {
       console.error('Error submitting question:', error);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   const handleCategoryChange = (event: SelectChangeEvent) => {
-    const newCategory = event.target.value;
-    console.log('Selected category:', newCategory); // Debug log
-    setCategory(newCategory);
+    setCategory(event.target.value);
   };
+  useEffect(() => {
+    console.log('🔍 API_BASE_URL:', API_BASE_URL);
+    console.log('🔍 Should be ngrok URL, not localhost!');
+    setFadeIn(true);
+  }, []);
 
   return (
-    <Container maxWidth="md">
-      <Box sx={{ my: 4 }}>
-        <Card>
-          <Box sx={{ p: 3 }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
+    <Box
+      sx={{
+        minHeight: '100vh',
+        background: 'linear-gradient(180deg, #FFFFFF 0%, #FAFAFA 100%)',
+        py: { xs: 4, sm: 6, md: 8 },
+      }}
+    >
+      <Container maxWidth="md">
+        <Fade in={fadeIn} timeout={600}>
+          <Box>
+            {/* Header */}
+            <Box
+              sx={{
+                mb: { xs: 4, sm: 6 },
+                display: 'flex',
+                alignItems: 'center',
+                gap: 2,
+              }}
+            >
               <Button
                 variant="outlined"
                 startIcon={<ArrowBackIcon />}
                 onClick={() => navigate('/board')}
-                size="small"
-                sx={{ mr: 2 }}
+                sx={{
+                  borderRadius: 3,
+                  borderWidth: 2,
+                  '&:hover': {
+                    borderWidth: 2,
+                  },
+                }}
               >
-                Back to Board
+                Back
               </Button>
-              <Typography variant="h5" component="h1" sx={{ flexGrow: 1 }}>
+              <Typography
+                variant="h2"
+                component="h1"
+                sx={{
+                  flexGrow: 1,
+                  fontWeight: 700,
+                  background: 'linear-gradient(135deg, #0066CC 0%, #004C99 100%)',
+                  backgroundClip: 'text',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                }}
+              >
                 Ask a Question
               </Typography>
             </Box>
 
-            <form onSubmit={handleSubmit}>
-              <FormControl fullWidth sx={{ mb: 3 }}>
-                <InputLabel>Category</InputLabel>
-                <Select
-                  value={category}
-                  label="Category"
-                  onChange={handleCategoryChange}
-                  required
-                >
-                  {categories.map((cat) => (
-                    <MenuItem key={cat} value={cat}>
-                      {cat}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
+            {/* Form Card */}
+            <Card
+              sx={{
+                p: { xs: 4, sm: 5, md: 6 },
+                border: '1px solid rgba(0, 0, 0, 0.06)',
+              }}
+            >
+              <form onSubmit={handleSubmit}>
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                  <FormControl fullWidth>
+                    <InputLabel>Category</InputLabel>
+                    <Select
+                      value={category}
+                      label="Category"
+                      onChange={handleCategoryChange}
+                      required
+                      sx={{
+                        borderRadius: 3,
+                      }}
+                    >
+                      {categories.map((cat) => (
+                        <MenuItem key={cat} value={cat}>
+                          {cat}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
 
-              <TextField
-                label="Your Question"
-                multiline
-                rows={6}
-                value={question}
-                onChange={(e) => setQuestion(e.target.value)}
-                fullWidth
-                required
-                sx={{
-                  '& .MuiOutlinedInput-root': {
-                    fontSize: { xs: '1rem', sm: '1.1rem', md: '1.2rem' },
-                    '& textarea': {
-                      minHeight: { xs: '70px', sm: '120px', md: '80px' }
-                    }
-                  },
-                  '& .MuiInputLabel-root': {
-                    fontSize: { xs: '1rem', sm: '1.1rem', md: '1.2rem' }
-                  }
-                }}
-              />
+                  <TextField
+                    label="Your Question"
+                    multiline
+                    rows={8}
+                    value={question}
+                    onChange={(e) => setQuestion(e.target.value)}
+                    fullWidth
+                    required
+                    placeholder="Type your question here..."
+                    sx={{
+                      '& .MuiOutlinedInput-root': {
+                        borderRadius: 3,
+                        fontSize: '1.125rem',
+                        '& textarea': {
+                          minHeight: '120px',
+                        },
+                      },
+                      '& .MuiInputLabel-root': {
+                        fontSize: '1rem',
+                      },
+                    }}
+                  />
 
-              <Button
-                type="submit"
-                variant="contained"
-                color="primary"
-                fullWidth
-                disabled={!question.trim() || !category}
-              >
-                Submit Question
-              </Button>
-            </form>
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      gap: 2,
+                      justifyContent: 'flex-end',
+                      flexWrap: 'wrap',
+                    }}
+                  >
+                    <Button
+                      variant="outlined"
+                      onClick={() => navigate('/board')}
+                      disabled={isSubmitting}
+                      sx={{
+                        borderRadius: 3,
+                        borderWidth: 2,
+                        '&:hover': {
+                          borderWidth: 2,
+                        },
+                      }}
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      type="submit"
+                      variant="contained"
+                      disabled={!question.trim() || !category || isSubmitting}
+                      endIcon={<SendIcon />}
+                      sx={{
+                        borderRadius: 3,
+                        minWidth: '140px',
+                      }}
+                    >
+                      {isSubmitting ? 'Submitting...' : 'Submit'}
+                    </Button>
+                  </Box>
+                </Box>
+              </form>
+            </Card>
           </Box>
-        </Card>
-      </Box>
-    </Container>
+        </Fade>
+      </Container>
+    </Box>
   );
 };
 
-export default AskQuestion; 
+export default AskQuestion;

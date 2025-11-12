@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Container,
@@ -7,19 +7,28 @@ import {
   Button,
   Typography,
   Alert,
+  Card,
+  CardContent,
+  Fade,
 } from '@mui/material';
-import AdminPanelIcon from '@mui/icons-material/AdminPanelSettings'; 
+import AdminPanelIcon from '@mui/icons-material/AdminPanelSettings';
+import LockIcon from '@mui/icons-material/Lock';
+import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 
 const Login: React.FC = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [fadeIn, setFadeIn] = useState(false);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    setFadeIn(true);
+  }, []);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (username === 'admin' && password === 'faithheals1853' ) {
-      // Store authentication state (you might want to use a proper auth context/state management)
+    if (username === 'admin' && password === 'faithheals1853') {
       localStorage.setItem('isAdmin', 'true');
       navigate('/admin');
     } else {
@@ -28,69 +37,158 @@ const Login: React.FC = () => {
   };
 
   return (
-    <Container maxWidth="sm">
-      <Box
-        sx={{
-          marginTop: 8,
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-        }}
-      >
-        <AdminPanelIcon sx={{ fontSize: 60, color: 'primary.main', mb: 2 }} />
-        <Typography component="h1" variant="h4" gutterBottom>
-          Admin Login
-        </Typography>
-        <Box component="form" onSubmit={handleSubmit} sx={{ mt: 1, width: '100%' }}>
-          {error && (
-            <Alert severity="error" sx={{ mb: 2 }}>
-              {error}
-            </Alert>
-          )}
-          <TextField
-            margin="normal"
-            required
-            fullWidth
-            id="username"
-            label="Username"
-            name="username"
-            autoComplete="username"
-            autoFocus
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-          />
-          <TextField
-            margin="normal"
-            required
-            fullWidth
-            name="password"
-            label="Password"
-            type="password"
-            id="password"
-            autoComplete="current-password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-          />
-          <Button
-            type="submit"
-            fullWidth
-            variant="contained"
-            sx={{ mt: 3, mb: 2 }}
-          >
-            Sign In
-          </Button>
-          <Button
-            fullWidth
-            variant="outlined"
-            onClick={() => navigate('/')}
-          >
-            Back to Home
-          </Button>
-        </Box>
-      </Box>
-    </Container>
+    <Box
+      sx={{
+        minHeight: '100vh',
+        background: 'linear-gradient(180deg, #FFFFFF 0%, #FAFAFA 100%)',
+        display: 'flex',
+        alignItems: 'center',
+        py: { xs: 4, sm: 6, md: 8 },
+      }}
+    >
+      <Container maxWidth="sm">
+        <Fade in={fadeIn} timeout={600}>
+          <Box>
+            <Button
+              variant="outlined"
+              startIcon={<ArrowBackIcon />}
+              onClick={() => navigate('/')}
+              sx={{
+                mb: 4,
+                borderRadius: 3,
+                borderWidth: 2,
+                '&:hover': {
+                  borderWidth: 2,
+                },
+              }}
+            >
+              Back to Home
+            </Button>
+
+            <Card
+              sx={{
+                p: { xs: 4, sm: 5, md: 6 },
+                border: '1px solid rgba(0, 0, 0, 0.06)',
+              }}
+            >
+              <CardContent>
+                <Box
+                  sx={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    mb: 4,
+                  }}
+                >
+                  <Box
+                    sx={{
+                      display: 'inline-flex',
+                      p: 2,
+                      mb: 3,
+                      borderRadius: 3,
+                      background: 'linear-gradient(135deg, rgba(0, 102, 204, 0.1) 0%, rgba(0, 76, 153, 0.1) 100%)',
+                    }}
+                  >
+                    <AdminPanelIcon
+                      sx={{
+                        fontSize: { xs: 48, sm: 64 },
+                        color: 'primary.main',
+                      }}
+                    />
+                  </Box>
+                  <Typography
+                    component="h1"
+                    variant="h3"
+                    sx={{
+                      mb: 1,
+                      fontWeight: 700,
+                      background: 'linear-gradient(135deg, #0066CC 0%, #004C99 100%)',
+                      backgroundClip: 'text',
+                      WebkitBackgroundClip: 'text',
+                      WebkitTextFillColor: 'transparent',
+                    }}
+                  >
+                    Admin Login
+                  </Typography>
+                  <Typography variant="body1" color="text.secondary" textAlign="center">
+                    Sign in to access the admin panel
+                  </Typography>
+                </Box>
+
+                <Box component="form" onSubmit={handleSubmit} sx={{ width: '100%' }}>
+                  {error && (
+                    <Alert
+                      severity="error"
+                      sx={{
+                        mb: 3,
+                        borderRadius: 3,
+                      }}
+                      onClose={() => setError('')}
+                    >
+                      {error}
+                    </Alert>
+                  )}
+
+                  <TextField
+                    margin="normal"
+                    required
+                    fullWidth
+                    id="username"
+                    label="Username"
+                    name="username"
+                    autoComplete="username"
+                    autoFocus
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    sx={{
+                      mb: 2,
+                      '& .MuiOutlinedInput-root': {
+                        borderRadius: 3,
+                      },
+                    }}
+                  />
+                  <TextField
+                    margin="normal"
+                    required
+                    fullWidth
+                    name="password"
+                    label="Password"
+                    type="password"
+                    id="password"
+                    autoComplete="current-password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    sx={{
+                      mb: 3,
+                      '& .MuiOutlinedInput-root': {
+                        borderRadius: 3,
+                      },
+                    }}
+                  />
+
+                  <Button
+                    type="submit"
+                    fullWidth
+                    variant="contained"
+                    startIcon={<LockIcon />}
+                    sx={{
+                      mt: 2,
+                      mb: 2,
+                      py: 1.5,
+                      borderRadius: 3,
+                      fontSize: '1.125rem',
+                    }}
+                  >
+                    Sign In
+                  </Button>
+                </Box>
+              </CardContent>
+            </Card>
+          </Box>
+        </Fade>
+      </Container>
+    </Box>
   );
-  
 };
 
-export default Login; 
+export default Login;
