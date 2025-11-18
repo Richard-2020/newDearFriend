@@ -29,6 +29,45 @@ function Home() {
         overflow: 'hidden',
       }}
     >
+      {/* Header with Admin Login */}
+      <Box
+        sx={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          zIndex: 10,
+          pt: { xs: 2, sm: 3 },
+          px: { xs: 2, sm: 3, md: 4 },
+        }}
+      >
+        <Container maxWidth="lg">
+          <Box
+            sx={{
+              display: 'flex',
+              justifyContent: 'flex-end',
+              alignItems: 'center',
+            }}
+          >
+            <Button
+              variant="outlined"
+              size="medium"
+              onClick={() => navigate('/login')}
+              startIcon={<AdminPanelIcon />}
+              sx={{
+                borderRadius: 3,
+                borderWidth: 2,
+                '&:hover': {
+                  borderWidth: 2,
+                },
+              }}
+            >
+              Admin Login
+            </Button>
+          </Box>
+        </Container>
+      </Box>
+
       {/* Hero Section */}
       <Container
         maxWidth="lg"
@@ -99,22 +138,18 @@ function Home() {
                 View Questions
               </Button>
               <Button
-                variant="outlined"
+                variant="contained"
                 size="large"
-                onClick={() => navigate('/login')}
-                startIcon={<AdminPanelIcon />}
+                onClick={() => navigate('/ask')}
+                endIcon={<ArrowForwardIcon />}
                 sx={{
                   px: { xs: 4, sm: 5 },
                   py: { xs: 1.5, sm: 2 },
                   fontSize: { xs: '1rem', sm: '1.125rem' },
                   borderRadius: 3,
-                  borderWidth: 2,
-                  '&:hover': {
-                    borderWidth: 2,
-                  },
                 }}
               >
-                Admin Login
+                Ask Questions
               </Button>
             </Box>
           </Box>
@@ -189,19 +224,6 @@ function Home() {
                   Post your questions to our community board. Our team will review and respond to
                   your questions personally with thoughtful, detailed answers.
                 </Typography>
-                <Button
-                  variant="contained"
-                  size="large"
-                  onClick={() => navigate('/board')}
-                  endIcon={<ArrowForwardIcon />}
-                  sx={{
-                    px: 5,
-                    py: 1.5,
-                    borderRadius: 3,
-                  }}
-                >
-                  Explore Questions
-                </Button>
               </CardContent>
             </Card>
           </Box>

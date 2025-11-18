@@ -35,7 +35,7 @@ interface Question {
   answered: boolean;
 }
 
-const allCategories = ['All', 'Unanswered', ...categories];
+const allCategories = ['All', ...categories];
 
 const QuestionBoard: React.FC = () => {
   const [questions, setQuestions] = useState<Question[]>([]);
@@ -70,8 +70,11 @@ const QuestionBoard: React.FC = () => {
   };
 
   const filteredQuestions = questions.filter(question => {
+    // Only show questions that have been answered
+    if (!question.answered) return false;
+    
     if (selectedCategory === 'All') return true;
-    if (selectedCategory === 'Unanswered') return !question.answered;
+    if (selectedCategory === 'Unanswered') return false; // No unanswered questions should show
     return question.category === selectedCategory;
   });
 
@@ -117,7 +120,7 @@ const QuestionBoard: React.FC = () => {
                   Questions
                 </Typography>
                 <Typography variant="body1" color="text.secondary">
-                  Explore questions from our community
+                  View answered questions from our community
                 </Typography>
               </Box>
               <Box
@@ -200,12 +203,12 @@ const QuestionBoard: React.FC = () => {
                 }}
               />
               <Typography variant="h5" color="text.secondary" gutterBottom>
-                No questions found
+                No answered questions found
               </Typography>
               <Typography variant="body1" color="text.secondary" sx={{ mb: 4 }}>
                 {selectedCategory === 'All'
-                  ? 'Be the first to ask a question!'
-                  : `No questions in the "${selectedCategory}" category yet.`}
+                  ? 'No questions have been answered yet. Check back later!'
+                  : `No answered questions in the "${selectedCategory}" category yet.`}
               </Typography>
               <Button
                 variant="contained"
