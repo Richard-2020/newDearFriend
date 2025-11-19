@@ -10,15 +10,19 @@ import {
   Card,
   CardContent,
   Fade,
+  CircularProgress,
 } from '@mui/material';
 import AdminPanelIcon from '@mui/icons-material/AdminPanelSettings';
 import LockIcon from '@mui/icons-material/Lock';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+
 const Login: React.FC = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
   const [fadeIn, setFadeIn] = useState(false);
   const navigate = useNavigate();
 
@@ -26,13 +30,41 @@ const Login: React.FC = () => {
     setFadeIn(true);
   }, []);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (username === 'admin' && password === 'faithheals1853') {
-      localStorage.setItem('isAdmin', 'true');
-      navigate('/admin');
-    } else {
-      setError('Invalid username or password');
+    setError('');
+    setIsLoading(true);
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/admin/login`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'ngrok-skip-browser-warning': 'true',
+        },
+        credentials: 'include', // Important for cookies
+        body: JSON.stringify({ username, password }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        // Store token in memory (not localStorage for better security)
+        // The token is also stored in httpOnly cookie by the server
+        if (data.token) {
+          // Store token in sessionStorage (more secure than localStorage)
+          // In production, consider using httpOnly cookies only
+          sessionStorage.setItem('authToken', data.token);
+        }
+        navigate('/admin');
+      } else {
+        setError(data.message || 'Invalid username or password');
+      }
+    } catch (error) {
+      console.error('Login error:', error);
+      setError('An error occurred. Please try again.');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -170,7 +202,8 @@ const Login: React.FC = () => {
                     type="submit"
                     fullWidth
                     variant="contained"
-                    startIcon={<LockIcon />}
+                    startIcon={isLoading ? <CircularProgress size={20} color="inherit" /> : <LockIcon />}
+                    disabled={isLoading}
                     sx={{
                       mt: 2,
                       mb: 2,
@@ -179,7 +212,7 @@ const Login: React.FC = () => {
                       fontSize: '1.125rem',
                     }}
                   >
-                    Sign In
+                    {isLoading ? 'Signing In...' : 'Sign In'}
                   </Button>
                 </Box>
               </CardContent>

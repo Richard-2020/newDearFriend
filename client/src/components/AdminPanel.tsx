@@ -25,6 +25,26 @@ import CancelIcon from '@mui/icons-material/Cancel';
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
 
+// Helper function to get auth token
+const getAuthToken = (): string | null => {
+  return sessionStorage.getItem('authToken');
+};
+
+// Helper function to get auth headers
+const getAuthHeaders = (): HeadersInit => {
+  const token = getAuthToken();
+  const headers: HeadersInit = {
+    'Content-Type': 'application/json',
+    'ngrok-skip-browser-warning': 'true',
+  };
+  
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+  
+  return headers;
+};
+
 interface Question {
   _id: string;
   text: string;
@@ -74,10 +94,8 @@ const AdminPanel: React.FC = () => {
         `${API_BASE_URL}/api/questions/${selectedQuestion._id}/answer`,
         {
           method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-            'ngrok-skip-browser-warning': 'true',
-          },
+          headers: getAuthHeaders(),
+          credentials: 'include',
           body: JSON.stringify({ answer }),
         }
       );
@@ -86,6 +104,10 @@ const AdminPanel: React.FC = () => {
         setAnswer('');
         setSelectedQuestion(null);
         fetchQuestions();
+      } else if (response.status === 401) {
+        // Token expired or invalid
+        sessionStorage.removeItem('authToken');
+        navigate('/login');
       }
     } catch (error) {
       console.error('Error submitting answer:', error);
@@ -99,10 +121,8 @@ const AdminPanel: React.FC = () => {
       try {
         const response = await fetch(`${API_BASE_URL}/api/questions/${questionId}`, {
           method: 'DELETE',
-          headers: {
-            'ngrok-skip-browser-warning': 'true',
-          },
-          
+          headers: getAuthHeaders(),
+          credentials: 'include',
         });
 
         if (response.ok) {
@@ -111,6 +131,10 @@ const AdminPanel: React.FC = () => {
             setAnswer('');
           }
           fetchQuestions();
+        } else if (response.status === 401) {
+          // Token expired or invalid
+          sessionStorage.removeItem('authToken');
+          navigate('/login');
         }
       } catch (error) {
         console.error('Error deleting question:', error);
@@ -121,6 +145,21 @@ const AdminPanel: React.FC = () => {
   const handleSelectQuestion = (question: Question) => {
     setSelectedQuestion(question);
     setAnswer(question.answer || '');
+  };
+
+  const handleLogout = async () => {
+    try {
+      await fetch(`${API_BASE_URL}/api/admin/logout`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        credentials: 'include',
+      });
+    } catch (error) {
+      console.error('Logout error:', error);
+    } finally {
+      sessionStorage.removeItem('authToken');
+      navigate('/login');
+    }
   };
 
   return (

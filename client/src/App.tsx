@@ -190,8 +190,52 @@ const theme = createTheme({
 
 // Protected Route component
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-  const isAdmin = localStorage.getItem('isAdmin') === 'true';
-  return isAdmin ? <>{children}</> : <Navigate to="/login" />;
+  const [isAuthenticated, setIsAuthenticated] = React.useState<boolean | null>(null);
+  const [isLoading, setIsLoading] = React.useState(true);
+
+  React.useEffect(() => {
+    const verifyToken = async () => {
+      try {
+        const token = sessionStorage.getItem('authToken');
+        if (!token) {
+          setIsAuthenticated(false);
+          setIsLoading(false);
+          return;
+        }
+
+        const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+        const response = await fetch(`${API_BASE_URL}/api/admin/verify`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'ngrok-skip-browser-warning': 'true',
+          },
+          credentials: 'include',
+        });
+
+        if (response.ok) {
+          setIsAuthenticated(true);
+        } else {
+          // Token invalid, clear it
+          sessionStorage.removeItem('authToken');
+          setIsAuthenticated(false);
+        }
+      } catch (error) {
+        console.error('Token verification error:', error);
+        sessionStorage.removeItem('authToken');
+        setIsAuthenticated(false);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    verifyToken();
+  }, []);
+
+  if (isLoading) {
+    return null; // Or a loading spinner
+  }
+
+  return isAuthenticated ? <>{children}</> : <Navigate to="/login" />;
 };
 
 function App() {
