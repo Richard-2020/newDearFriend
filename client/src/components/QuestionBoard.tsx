@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   Container,
   Typography,
@@ -8,11 +8,6 @@ import {
   Button,
   Box,
   Chip,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
-  SelectChangeEvent,
   useTheme,
   useMediaQuery,
   Fade,
@@ -22,6 +17,7 @@ import HomeIcon from '@mui/icons-material/Home';
 import QuestionAnswerIcon from '@mui/icons-material/QuestionAnswer';
 import AddIcon from '@mui/icons-material/Add';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import ClearIcon from '@mui/icons-material/Clear';
 import { categories } from '../utils/categories';
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
@@ -35,12 +31,11 @@ interface Question {
   answered: boolean;
 }
 
-const allCategories = ['All', ...categories];
-
 const QuestionBoard: React.FC = () => {
   const [questions, setQuestions] = useState<Question[]>([]);
-  const [selectedCategory, setSelectedCategory] = useState('All');
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const [fadeIn, setFadeIn] = useState(false);
@@ -48,7 +43,13 @@ const QuestionBoard: React.FC = () => {
   useEffect(() => {
     fetchQuestions();
     setFadeIn(true);
-  }, []);
+    
+    // Check for category in URL params
+    const categoryParam = searchParams.get('category');
+    if (categoryParam) {
+      setSelectedCategories([decodeURIComponent(categoryParam)]);
+    }
+  }, [searchParams]);
 
   const fetchQuestions = async () => {
     try {
@@ -65,17 +66,31 @@ const QuestionBoard: React.FC = () => {
     }
   };
 
-  const handleCategoryChange = (event: SelectChangeEvent) => {
-    setSelectedCategory(event.target.value);
+  const handleCategoryToggle = (category: string) => {
+    setSelectedCategories(prev => {
+      if (prev.includes(category)) {
+        // Deselect category
+        return prev.filter(cat => cat !== category);
+      } else {
+        // Select category
+        return [...prev, category];
+      }
+    });
+  };
+
+  const handleResetFilters = () => {
+    setSelectedCategories([]);
   };
 
   const filteredQuestions = questions.filter(question => {
     // Only show questions that have been answered
     if (!question.answered) return false;
     
-    if (selectedCategory === 'All') return true;
-    if (selectedCategory === 'Unanswered') return false; // No unanswered questions should show
-    return question.category === selectedCategory;
+    // If no categories selected, show all answered questions
+    if (selectedCategories.length === 0) return true;
+    
+    // Show questions matching any selected category
+    return selectedCategories.includes(question.category);
   });
 
   const sortedQuestions = [...filteredQuestions].sort((a, b) => 
@@ -157,30 +172,129 @@ const QuestionBoard: React.FC = () => {
               </Box>
             </Box>
 
-            {/* Category Filter */}
-            <Box
-              sx={{
-                maxWidth: { xs: '100%', sm: '400px' },
-                mb: { xs: 4, sm: 6 },
-              }}
-            >
-              <FormControl fullWidth>
-                <InputLabel>Filter by Category</InputLabel>
-                <Select
-                  value={selectedCategory}
-                  label="Filter by Category"
-                  onChange={handleCategoryChange}
-                  sx={{
-                    borderRadius: 3,
-                  }}
-                >
-                  {allCategories.map((category) => (
-                    <MenuItem key={category} value={category}>
-                      {category}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
+            {/* Category Grid Filter */}
+            <Box sx={{ mb: { xs: 4, sm: 6 } }}>
+              <Box
+                sx={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  mb: 3,
+                  flexWrap: 'wrap',
+                  gap: 2,
+                }}
+              >
+                <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                  Filter by Category
+                </Typography>
+                {selectedCategories.length > 0 && (
+                  <Button
+                    variant="outlined"
+                    size="small"
+                    startIcon={<ClearIcon />}
+                    onClick={handleResetFilters}
+                    sx={{
+                      borderRadius: 3,
+                      borderWidth: 2,
+                      '&:hover': {
+                        borderWidth: 2,
+                      },
+                    }}
+                  >
+                    Reset Filters
+                  </Button>
+                )}
+              </Box>
+              <Box
+                sx={{
+                  display: 'grid',
+                  gridTemplateColumns: {
+                    xs: 'repeat(2, 1fr)',
+                    sm: 'repeat(3, 1fr)',
+                    md: 'repeat(4, 1fr)',
+                    lg: 'repeat(4, 1fr)',
+                  },
+                  gap: { xs: 2, sm: 2.5, md: 3 },
+                }}
+              >
+                {categories.map((category, index) => {
+                  const isSelected = selectedCategories.includes(category);
+                  return (
+                    <Fade
+                      key={category}
+                      in={fadeIn}
+                      timeout={400 + index * 50}
+                      style={{ transitionDelay: `${index * 30}ms` }}
+                    >
+                      <Card
+                        onClick={() => handleCategoryToggle(category)}
+                        sx={{
+                          cursor: 'pointer',
+                          transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                          border: isSelected
+                            ? '2px solid'
+                            : '1px solid rgba(0, 0, 0, 0.06)',
+                          borderColor: isSelected ? 'primary.main' : 'rgba(0, 0, 0, 0.06)',
+                          backgroundColor: isSelected
+                            ? 'rgba(0, 102, 204, 0.08)'
+                            : 'white',
+                          boxShadow: isSelected
+                            ? '0px 8px 16px rgba(0, 102, 204, 0.15)'
+                            : 'none',
+                          '&:hover': {
+                            transform: 'translateY(-4px)',
+                            boxShadow: isSelected
+                              ? '0px 12px 24px rgba(0, 102, 204, 0.2)'
+                              : '0px 8px 16px rgba(0, 102, 204, 0.1)',
+                            borderColor: 'primary.main',
+                            backgroundColor: isSelected
+                              ? 'rgba(0, 102, 204, 0.12)'
+                              : 'rgba(0, 102, 204, 0.04)',
+                          },
+                        }}
+                      >
+                        <CardContent
+                          sx={{
+                            p: { xs: 2, sm: 2.5 },
+                            textAlign: 'center',
+                            '&:last-child': {
+                              pb: { xs: 2, sm: 2.5 },
+                            },
+                          }}
+                        >
+                          <Typography
+                            variant="body1"
+                            sx={{
+                              fontWeight: isSelected ? 600 : 500,
+                              color: isSelected ? 'primary.main' : 'text.primary',
+                              transition: 'all 0.2s ease',
+                            }}
+                          >
+                            {category}
+                          </Typography>
+                          {isSelected && (
+                            <Box
+                              sx={{
+                                mt: 1,
+                                display: 'flex',
+                                justifyContent: 'center',
+                                alignItems: 'center',
+                              }}
+                            >
+                              <CheckCircleIcon
+                                sx={{
+                                  fontSize: 18,
+                                  color: 'primary.main',
+                                }}
+                              />
+                            </Box>
+                          )}
+                        </CardContent>
+                      </Card>
+                    </Fade>
+                  );
+                })}
+              </Box>
             </Box>
           </Box>
         </Fade>
@@ -206,9 +320,11 @@ const QuestionBoard: React.FC = () => {
                 No answered questions found
               </Typography>
               <Typography variant="body1" color="text.secondary" sx={{ mb: 4 }}>
-                {selectedCategory === 'All'
+                {selectedCategories.length === 0
                   ? 'No questions have been answered yet. Check back later!'
-                  : `No answered questions in the "${selectedCategory}" category yet.`}
+                  : selectedCategories.length === 1
+                  ? `No answered questions in the "${selectedCategories[0]}" category yet.`
+                  : `No answered questions found in the selected categories.`}
               </Typography>
               <Button
                 variant="contained"

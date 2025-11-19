@@ -13,9 +13,12 @@ import {
   MenuItem,
   SelectChangeEvent,
   Fade,
+  Snackbar,
+  Alert,
 } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import SendIcon from '@mui/icons-material/Send';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import { categories } from '../utils/categories';
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
@@ -24,6 +27,7 @@ const AskQuestion: React.FC = () => {
   const [question, setQuestion] = useState('');
   const [category, setCategory] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showSuccessToast, setShowSuccessToast] = useState(false);
   const navigate = useNavigate();
   const [fadeIn, setFadeIn] = useState(false);
 
@@ -49,13 +53,33 @@ const AskQuestion: React.FC = () => {
         }),
       });
       if (response.ok) {
-        navigate('/board');
+        // Clear form fields
+        setQuestion('');
+        setCategory('');
+        
+        // Show success toast
+        setShowSuccessToast(true);
+        
+        // Navigate to board after a short delay to allow user to see the toast
+        setTimeout(() => {
+          navigate('/board');
+        }, 2000);
+      } else {
+        // Handle error response
+        console.error('Error submitting question:', response.statusText);
       }
     } catch (error) {
       console.error('Error submitting question:', error);
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const handleCloseToast = (event?: React.SyntheticEvent | Event, reason?: string) => {
+    if (reason === 'clickaway') {
+      return;
+    }
+    setShowSuccessToast(false);
   };
 
   const handleCategoryChange = (event: SelectChangeEvent) => {
@@ -209,6 +233,30 @@ const AskQuestion: React.FC = () => {
           </Box>
         </Fade>
       </Container>
+      
+      {/* Success Toast Notification */}
+      <Snackbar
+        open={showSuccessToast}
+        autoHideDuration={6000}
+        onClose={handleCloseToast}
+        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+      >
+        <Alert
+          onClose={handleCloseToast}
+          severity="success"
+          icon={<CheckCircleIcon />}
+          sx={{
+            width: '100%',
+            borderRadius: 3,
+            fontSize: '1rem',
+            '& .MuiAlert-icon': {
+              fontSize: '1.5rem',
+            },
+          }}
+        >
+          Your question has been sent to the admin. They will review it and reply shortly.
+        </Alert>
+      </Snackbar>
     </Box>
   );
 };
